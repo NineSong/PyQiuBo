@@ -1,31 +1,20 @@
 #!/usr/bin/env python
 import requests
 import time
-SchoolNumber = '141320131'
 class SearchAllLessonId(object):
     """docstring for SearchAllLessonId"""
-    def __init__(self):
+    def __init__(self,arg):
+        self.SchoolNumber = str(arg)
         self.acc_token = ''
         self.url_text = ''
         self.cookies = ''
         self.url = 'http://classair.dhu.edu.cn/mhs.php/Mhs/'
         self.S = requests.Session()
     def Get_totken(self):
-        Password = SchoolNumber[-4:]
-        First_Url = self.url + 'Login/doLogin' + '?password='+Password+'&role=1&siteid=1&university_id''=2008'+'&username='+ SchoolNumber
+        Password = self.SchoolNumber[-4:]
+        First_Url = self.url + 'Login/doLogin' + '?password='+Password+'&role=1&siteid=1&university_id''=2008'+'&username='+ self.SchoolNumber
         first_page = self.S.get(First_Url)
-        self.cookies = first_page.headers['Set-Cookie'].split(';')[0]
-        #What you get is unicode type and you need convert it to string
-        #And use some funstion to process
-        #print(re_one.text)
-        first_page_encode = first_page.text.encode('utf-8')
-        #first_page_encode is the string type of the text
-        first_page_encode = first_page_encode[first_page_encode.find('access_token')+len('access_token'):]
-        for character in first_page_encode:
-            if character.isalnum():
-                self.acc_token += character
-            if character == ',':
-                break
+        self.acc_token = first_page.json()['results']['access_token']
 
     def Get_course_list(self):
         _list = []
@@ -36,6 +25,7 @@ class SearchAllLessonId(object):
         'begin_time':'',
         }
         self.Get_totken()
+        print(self.acc_token)
         Index_Url = 'http://classair.dhu.edu.cn/mhs.php/Mhs/Outline/index?access_token=' + self.acc_token
         re_index = requests.get(Index_Url)
         for element in re_index.json()['results']['courseList']:
@@ -101,11 +91,12 @@ class Time_Control(object):
             time.sleep(_seconds)
 
 def main():
-    while True:
-        S = SearchAllLessonId()
-        _list = S.Get_course_list()
-        T = Time_Control(_list)
-        S.sign_in(T.find_course())
+	_sch_num = input("enter School Number: ")
+	while True:
+	    S = SearchAllLessonId(_sch_num)
+	    _list = S.Get_course_list()
+	    T = Time_Control(_list)
+	    S.sign_in(T.find_course())
 
 if __name__ == '__main__':
     main()
