@@ -20,8 +20,8 @@ class SearchAllLessonId(object):
         #print(re_one.text)
         first_page_encode = first_page.text.encode('utf-8')
         #first_page_encode is the string type of the text
-        first_page_encode = first_page_encode[re_one_encode.find('access_token')+len('access_token'):]
-        for character in re_one_encode:
+        first_page_encode = first_page_encode[first_page_encode.find('access_token')+len('access_token'):]
+        for character in first_page_encode:
             if character.isalnum():
                 self.acc_token += character
             if character == ',':
