@@ -7,20 +7,20 @@ class SearchAllLessonId(object):
     def __init__(self):
         self.acc_token = ''
         self.url_text = ''
-        self.url = 'http://classair.dhu.edu.cn/mhs.php/Mhs/'
         self.cookies = ''
+        self.url = 'http://classair.dhu.edu.cn/mhs.php/Mhs/'
         self.S = requests.Session()
     def Get_totken(self):
         Password = SchoolNumber[-4:]
         First_Url = self.url + 'Login/doLogin' + '?password='+Password+'&role=1&siteid=1&university_id''=2008'+'&username='+ SchoolNumber
-        re_one = self.S.get(First_Url)
-        self.cookies = re_one.headers['Set-Cookie'].split(';')[0]
-        #What you get is unicode type and you need convert it to string 
+        first_page = self.S.get(First_Url)
+        self.cookies = first_page.headers['Set-Cookie'].split(';')[0]
+        #What you get is unicode type and you need convert it to string
         #And use some funstion to process
         #print(re_one.text)
-        re_one_encode = re_one.text.encode('utf-8')
-        #re_one_encode is the string type of the text
-        re_one_encode = re_one_encode[re_one_encode.find('access_token')+len('access_token'):]
+        first_page_encode = first_page.text.encode('utf-8')
+        #first_page_encode is the string type of the text
+        first_page_encode = first_page_encode[re_one_encode.find('access_token')+len('access_token'):]
         for character in re_one_encode:
             if character.isalnum():
                 self.acc_token += character
@@ -50,7 +50,7 @@ class SearchAllLessonId(object):
         _sign_url += '&lesson_id=' + _dict['lesson_id']
         _sign_url += '&stu_id=' + SchoolNumber
         _text = self.S.get(_sign_url)
-        with open('/home/xinglong/workspace/ansongqiubo/log','a') as log:
+        with open('log','a') as log:
             _localtime = time.localtime(time.time())
             log.write('month:' + str(_localtime.tm_mon))
             log.write('day:' + str(_localtime.tm_mday))
@@ -93,25 +93,6 @@ class Time_Control(object):
         _D_min = int(begin_time[begin_time.index(':')+1:]) - self._min
         return (_D_hour*3600 + _D_min*60)
 
-    # def sign_in(self,_dict):
-    #     _sign_url = 'http://classair.dhu.edu.cn/mhs.php/Mhs/Online/signin/?'
-    #     _sign_url += 'course_id=' + _dict['course_id']
-    #     _sign_url += '&lesson_id=' + _dict['lesson_id']
-    #     _sign_url += '&stu_id=' + SchoolNumber
-    #     # self._sleep(_dict)
-    #     _head = {'Cookie':self._cookies}
-    #     _text = requests.get(_sign_url,headers = _head)
-    #     print(self._cookies)
-    #     print(_text.text)
-    #     with open('/home/xinglong/workspace/ansongqiubo/log','a') as log:
-    #         log.write('month:' + str(self._localtime.tm_mon))
-    #         log.write('day:' + str(self._localtime.tm_mday))
-    #         log.write('hour:' +str(self._localtime.tm_hour))
-    #         log.write('minute:' + str(self._localtime.tm_min))
-    #         log.write('courseId:' + _dict['course_id'])
-    #         log.write(_text.text.encode('utf-8'))
-    #         log.write('\n')
-    #     time.sleep(5400)
 
     def _sleep(self,_dict):
         _seconds = _dict['d_value']
