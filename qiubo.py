@@ -118,10 +118,14 @@ def main():
         exit()
 
     while True:
-        robot = SignInRobot()
-        schedule = robot.get_class_schedule()
-        timer = Timer(schedule)
-        robot.sign_in(timer.find_course())
+        try:
+            robot = SignInRobot()
+            schedule = robot.get_class_schedule()
+            timer = Timer(schedule)
+            robot.sign_in(timer.find_course())
+        except requests.exceptions.RequestException:
+            print('Connection failed!')
+            time.sleep(5)
 
 if __name__ == '__main__':
     main()
