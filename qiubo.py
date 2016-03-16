@@ -3,6 +3,7 @@
 import requests
 import time
 import sys
+# import json
 
 class SignInRobot(object):
 
@@ -19,9 +20,9 @@ class SignInRobot(object):
         response_json = self._session.get(
             'http://classair.dhu.edu.cn/mhs.php/Mhs/Login/doLogin',
             params={
-                'role': 1,
-                'siteid': 1,
-                'university_id': 2008,
+                # 'role': 1,
+                # 'siteid': 1,
+                # 'university_id': 2008,
                 'username': self._id,
                 'password': self._id[-4:]
             }
@@ -32,13 +33,15 @@ class SignInRobot(object):
         else:
             return None
 
-    def get_class_schedule(self):
+    def get_schedule(self):
         schedule = []
-        _dict = {
+        _course = {
             'day': '',
+            'course_name': '',
             'course_id': '',
             'lesson_id': '',
             'begin_time': '',
+            'span_time': ''
         }
 
         course_list = requests.get(
@@ -46,10 +49,11 @@ class SignInRobot(object):
             params={'access_token': self._access_token}
         ).json()['results']['courseList']
 
-        for element in course_list:
-            for _key in _dict:
-                _dict[_key] = element[_key]
-            schedule.append(_dict.copy())
+        for course in course_list:
+            # print(json.dumps(course, indent=2))
+            for key in _course:
+                _course[key] = course[key]
+            schedule.append(_course.copy())
         return schedule
 
     def sign_in(self, course):
@@ -62,55 +66,55 @@ class SignInRobot(object):
             }
         )
 
-        with open('log', 'a') as log:
-            _localtime = time.localtime(time.time())
+        with open('qiubo.log', 'a') as log:
             log.write(
-                'month:' + str(_localtime.tm_mon) +
-                'day:' + str(_localtime.tm_mday) +
-                'hour:' + str(_localtime.tm_hour) +
-                'minute:' + str(_localtime.tm_min) +
-                'courseId:' + course['course_id'] +
+                time.strftime('%Y/%m/%d %H:%M:%S', time.localtime()) + ' ' +
+                course['course_name'].encode('utf-8') + ' ' +
                 response.text.encode('utf-8') + '\n'
             )
-        time.sleep(5400)
+
+        if response.json()['code'] == 1:
+            print(course['course_name'] + ' sign in succeeded!')
+            time.sleep(5400)
+        else:
+            print(course['course_name'] + ' sign in failed!')
+
 
 class Timer(object):
 
-    def __init__(self, class_schedule):
-        self._list = class_schedule
-        self._localtime = time.localtime(time.time())
-        self._day = self._localtime.tm_wday + 1
-        self._hour = self._localtime.tm_hour
-        self._min = self._localtime.tm_min
+    def __init__(self, schedule):
+        self._schedule = schedule
+        localtime = time.localtime(time.time())
+        self._day = localtime.tm_wday + 1
+        self._hour = localtime.tm_hour
+        self._min = localtime.tm_min
 
     def find_course(self):
-        _D_value = 0
-        element = {}
-        for element in self._list:
-            _D_value = (element['day']-self._day) * 24 * 3600
-            if _D_value >= 0:
-                _D_value += self._calculate_time(element['begin_time'])
-                if _D_value >= -5400:
-                    break
-                else:
-                    continue
-            else:
+        for course in self._schedule:
+            if course['day'] < self._day:
                 continue
-        element['d_value'] = _D_value
-        self._sleep(element)
-        return element
+            countdown = (course['day']-self._day) * 24 * 60 + self._countdown(course['begin_time'])
+            if countdown >= -45:
+                break
 
-    def _calculate_time(self, begin_time):
+        course['countdown'] = countdown
+        self._sleep(course)
+        return course
+
+    def _countdown(self, begin_time):
         begin_time = begin_time.encode('utf-8')
-        _D_hour = int(begin_time[:begin_time.index(':')]) - self._hour
-        _D_min = int(begin_time[begin_time.index(':')+1:]) - self._min
-        return (_D_hour*3600 + _D_min*60)
+        hours = int(begin_time[:begin_time.index(':')]) - self._hour
+        minutes = int(begin_time[begin_time.index(':')+1:]) - self._min
+        return (hours*60 + minutes)
 
-    def _sleep(self, _dict):
-        _seconds = _dict['d_value']
-        if _seconds > 0:
-            print("Next course will start in %d minutes." % (_seconds / 60))
-            time.sleep(_seconds)
+    def _sleep(self, course):
+        minutes = course['countdown']
+        if minutes > 0:
+            h = minutes / 60
+            m = minutes % 60
+            print(course['course_name'] + ' will start in %dh %dm.' % (h, m))
+            print('Waiting for the course to start.')
+            time.sleep(minutes * 60)
 
 def main():
     if len(sys.argv) != 2:
@@ -120,12 +124,15 @@ def main():
     while True:
         try:
             robot = SignInRobot()
-            schedule = robot.get_class_schedule()
+            schedule = robot.get_schedule()
             timer = Timer(schedule)
             robot.sign_in(timer.find_course())
         except requests.exceptions.RequestException:
             print('Connection failed!')
             time.sleep(5)
+        except KeyboardInterrupt:
+            print('\b\bExiting :)')
+            exit()
 
 if __name__ == '__main__':
     main()
