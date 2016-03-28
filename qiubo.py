@@ -57,11 +57,6 @@ class QiuBo(object):
         if course is None:
             course = self._course
 
-        self._session.post(
-            'http://218.193.151.102/index.php/Mhs/Dhu/dologin.php',
-            data = {'username': self._id, 'password': self._id[-4:]}
-        )
-
         response = self._session.get(
             'http://218.193.151.102/index.php/Mhs/Keshang/signin/lesson_id/' +
             course['lesson_id'] + '/course_id/' + course['course_id'] + '/stu_id/' + self._id
