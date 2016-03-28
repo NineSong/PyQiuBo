@@ -12,6 +12,7 @@ config = {}
 class QiuBo(object):
     def __init__(self):
         self._id = config['id']
+        self._course = None
         self._session = requests.Session()
         self.login()
 
@@ -51,35 +52,44 @@ class QiuBo(object):
         # print(self._schedule)
 
     def sign_in(self, course=None):
-        if self._course is None:
-            return
+        succeed = False
 
         if course is None:
-            course = self._course
-
-        response = self._session.get(
-            'http://218.193.151.102/index.php/Mhs/Keshang/signin/lesson_id/' +
-            course['lesson_id'] + '/course_id/' + course['course_id'] + '/stu_id/' + self._id
-        )
-
-        if response.json()['code'] == 1:
-            print(course['course_name'] + u'签到成功！')
-        else:
-            print(course['course_name'] + u'签到失败！' + response.json()['reasons'])
-
-        if 'sign_in_log' in config and config['sign_in_log']:
-            if sys.version_info < (3, 0):
-                course_name = course['course_name'].encode('UTF-8')
-                response_text = response.text.encode('UTF-8')
+            if self._course is None:
+                return
             else:
-                course_name = course['course_name']
-                response_text = response.text
+                course = self._course
 
-            with open('qiubo.log', 'a') as log:
-                log.write(
-                    time.strftime('%Y/%m/%d %H:%M:%S', time.localtime()) +
-                    ' ' + course_name + ' ' + response_text + '\n'
-                )
+        for i in range(5):
+            response = self._session.get(
+                'http://218.193.151.102/index.php/Mhs/Keshang/signin/lesson_id/' +
+                course['lesson_id'] + '/course_id/' + course['course_id'] + '/stu_id/' + self._id
+            )
+
+            if response.json()['code'] == 1:
+                print(course['course_name'] + u'签到成功！')
+                succeed = True
+            else:
+                print(course['course_name'] + u'签到失败！' + response.json()['reasons'])
+
+            if 'sign_in_log' in config and config['sign_in_log']:
+                if sys.version_info < (3, 0):
+                    course_name = course['course_name'].encode('UTF-8')
+                    response_text = response.text.encode('UTF-8')
+                else:
+                    course_name = course['course_name']
+                    response_text = response.text
+
+                with open('qiubo.log', 'a') as log:
+                    log.write(
+                        time.strftime('%Y/%m/%d %H:%M:%S', time.localtime()) +
+                        ' ' + course_name + ' ' + response_text + '\n'
+                    )
+
+            if succeed:
+                return
+            elif i != 4:
+                time.sleep(30)
 
     def wait_for_next_course(self):
         _time = time.localtime()
@@ -95,7 +105,7 @@ class QiuBo(object):
             if minutes > -45:
                 self._course = course
                 if minutes > 0:
-                    print(course['course_name'] + u'将在%d小时%d分钟后开始' % (minutes // 60, minutes % 60))
+                    print(course['begin_time'] + ' ' + course['course_name'])
                     time.sleep(minutes * 60)
                 return
 
@@ -126,6 +136,7 @@ def main():
         #     'lesson_id': '11040',
         #     'course_id': '203423'
         # })
+        # exit()
     except requests.exceptions.RequestException:
         print(u'网络连接失败！')
         exit()
