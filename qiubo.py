@@ -1,138 +1,140 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import requests
+import pyquery
 import time
+import json
 import sys
-# import json
 
-class SignInRobot(object):
+config = {}
 
+class QiuBo(object):
     def __init__(self):
-        self._id = sys.argv[1]
+        self._id = config['id']
         self._session = requests.Session()
-        self._access_token = self._get_token()
-
-        if self._access_token is None:
-            print('Error: failed to log in!')
-            exit()
-
-    def _get_token(self):
-        response_json = self._session.get(
-            'http://classair.dhu.edu.cn/mhs.php/Mhs/Login/doLogin',
-            params={
-                # 'role': 1,
-                # 'siteid': 1,
-                # 'university_id': 2008,
-                'username': self._id,
-                'password': self._id[-4:]
-            }
-        ).json()
-
-        if 'results' in response_json:
-            return response_json['results']['access_token']
-        else:
-            return None
-
-    def get_schedule(self):
-        schedule = []
-        _course = {
-            'day': '',
-            'course_name': '',
-            'course_id': '',
-            'lesson_id': '',
-            'begin_time': '',
-            'span_time': ''
-        }
-
-        course_list = requests.get(
-            'http://classair.dhu.edu.cn/mhs.php/Mhs/Outline/index',
-            params={'access_token': self._access_token}
-        ).json()['results']['courseList']
-
-        for course in course_list:
-            # print(json.dumps(course, indent=2))
-            for key in _course:
-                _course[key] = course[key]
-            schedule.append(_course.copy())
-        return schedule
-
-    def sign_in(self, course):
-        response = self._session.get(
-            'http://classair.dhu.edu.cn/mhs.php/Mhs/Online/signin/',
-            params={
-                'course_id': course['course_id'],
-                'lesson_id': course['lesson_id'],
-                'stu_id': self._id
-            }
+        self._session.post(
+            'http://218.193.151.102/index.php/Mhs/Dhu/dologin.php',
+            data = {'username': self._id, 'password': self._id[-4:]}
         )
 
-        with open('qiubo.log', 'a') as log:
-            log.write(
-                time.strftime('%Y/%m/%d %H:%M:%S', time.localtime()) + ' ' +
-                course['course_name'].encode('utf-8') + ' ' +
-                response.text.encode('utf-8') + '\n'
-            )
+    def get_schedule(self):
+        response = self._session.get('http://218.193.151.102/index.php/Mhs/Dhu/mycourse.php')
+        pq = pyquery.PyQuery(response.text)
+        course_list = pq('#courselist')('.item')
+        course_info = pq('.listcontent')
+        begin_time = {
+            0: '8:15',
+            2: '10:05',
+            4: '13:00',
+            6: '14:50',
+            9: '18:00',
+            11: '19:50'
+        }
+        self._schedule = [[], [], [], [], [], [], []]
+
+        for (i, div) in enumerate(course_list):
+            style = pq(div).attr('style').split(';')
+            name = pq(div)('a').html()
+            onclick = pq(course_info[i])('a').attr('onclick').split(',')
+            self._schedule[int(style[0][5:-1]) // 20].append({
+                'course_name': name[:name.index('@')],
+                'lesson_id': onclick[0][onclick[0].index('(') + 1:],
+                'course_id': onclick[1],
+                'begin_time': begin_time[int(style[1][5:-3]) // 5],
+                'span_time': int(style[2][8:-3]) // 5
+            });
+
+        # print(self._schedule)
+
+    def sign_in(self, course=None):
+        if self._course is None:
+            return
+
+        if course is None:
+            course = self._course
+
+        response = self._session.get(
+            'http://218.193.151.102/index.php/Mhs/Keshang/signin/lesson_id/' +
+            course['lesson_id'] + '/course_id/' + course['course_id'] + '/stu_id/' + self._id
+        )
 
         if response.json()['code'] == 1:
-            print(course['course_name'] + ' sign in succeeded!')
-            time.sleep(5400)
+            print(course['course_name'] + u'签到成功！')
         else:
-            print(course['course_name'] + ' sign in failed!')
+            print(course['course_name'] + u'签到失败！' + response.json()['reasons'])
 
+        if 'sign_in_log' in config and config['sign_in_log']:
+            if sys.version_info < (3, 0):
+                course_name = course['course_name'].encode('UTF-8')
+                response_text = response.text.encode('UTF-8')
+            else:
+                course_name = course['course_name']
+                response_text = response.text
 
-class Timer(object):
+            with open('qiubo.log', 'a') as log:
+                log.write(
+                    time.strftime('%Y/%m/%d %H:%M:%S', time.localtime()) +
+                    ' ' + course_name + ' ' + response_text + '\n'
+                )
 
-    def __init__(self, schedule):
-        self._schedule = schedule
-        localtime = time.localtime(time.time())
-        self._day = localtime.tm_wday + 1
-        self._hour = localtime.tm_hour
-        self._min = localtime.tm_min
+    def wait_for_next_course(self):
+        _time = time.localtime()
+        _day = _time.tm_wday
+        _hour = _time.tm_hour
+        _min = _time.tm_min
+        schedule_today = self._schedule[_day]
 
-    def find_course(self):
-        for course in self._schedule:
-            if course['day'] < self._day:
-                continue
-            countdown = (course['day']-self._day) * 24 * 60 + self._countdown(course['begin_time'])
-            if countdown >= -45:
-                break
+        for course in schedule_today:
+            begin_time = course['begin_time'].split(':')
+            minutes = (int(begin_time[0]) - _hour)*60 + int(begin_time[1]) - _min
 
-        course['countdown'] = countdown
-        self._sleep(course)
-        return course
+            if minutes > -45:
+                self._course = course
+                if minutes > 0:
+                    print(course['course_name'] + u'将在%d小时%d分钟后开始' % (minutes // 60, minutes % 60))
+                    time.sleep(minutes * 60)
+                return
 
-    def _countdown(self, begin_time):
-        begin_time = begin_time.encode('utf-8')
-        hours = int(begin_time[:begin_time.index(':')]) - self._hour
-        minutes = int(begin_time[begin_time.index(':')+1:]) - self._min
-        return (hours*60 + minutes)
-
-    def _sleep(self, course):
-        minutes = course['countdown']
-        if minutes > 0:
-            h = minutes / 60
-            m = minutes % 60
-            print(course['course_name'] + ' will start in %dh %dm.' % (h, m))
-            print('Waiting for the course to start.')
-            time.sleep(minutes * 60)
+        self._course = None
 
 def main():
-    if len(sys.argv) != 2:
-        print('Usage: qiubo.py ID')
+    global config
+
+    try:
+        _input = raw_input
+    except:
+        _input = input
+
+    try:
+        with open('qiubo.json', 'r') as config_file:
+            config = json.load(config_file)
+    except:
+        pass
+
+    if 'id' not in config:
+        config['id'] = _input("Please enter your ID: ")
+
+    try:
+        qiubo = QiuBo()
+        qiubo.get_schedule()
+        # qiubo.sign_in({
+        #     'course_name': u'计算机专业前沿技术',
+        #     'lesson_id': '11040',
+        #     'course_id': '203423'
+        # })
+    except requests.exceptions.RequestException:
+        print(u'网络连接失败！')
         exit()
 
     while True:
         try:
-            robot = SignInRobot()
-            schedule = robot.get_schedule()
-            timer = Timer(schedule)
-            robot.sign_in(timer.find_course())
+            qiubo.wait_for_next_course()
+            qiubo.sign_in()
+            time.sleep(3600)
         except requests.exceptions.RequestException:
-            print('Connection failed!')
+            print(u'网络连接失败！')
             time.sleep(5)
-        except KeyboardInterrupt:
-            print('\b\bExiting :)')
-            exit()
 
 if __name__ == '__main__':
     main()
