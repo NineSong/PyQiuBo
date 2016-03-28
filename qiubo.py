@@ -13,6 +13,9 @@ class QiuBo(object):
     def __init__(self):
         self._id = config['id']
         self._session = requests.Session()
+        self.login()
+
+    def login(self):
         self._session.post(
             'http://218.193.151.102/index.php/Mhs/Dhu/dologin.php',
             data = {'username': self._id, 'password': self._id[-4:]}
@@ -53,6 +56,11 @@ class QiuBo(object):
 
         if course is None:
             course = self._course
+
+        self._session.post(
+            'http://218.193.151.102/index.php/Mhs/Dhu/dologin.php',
+            data = {'username': self._id, 'password': self._id[-4:]}
+        )
 
         response = self._session.get(
             'http://218.193.151.102/index.php/Mhs/Keshang/signin/lesson_id/' +
@@ -129,6 +137,7 @@ def main():
 
     while True:
         try:
+            qiubo.login()
             qiubo.wait_for_next_course()
             qiubo.sign_in()
             time.sleep(3600)
