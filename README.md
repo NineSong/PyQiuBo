@@ -2,21 +2,21 @@
 A Python script that helps students sign in DHU QiuBo app.
 
 # Prerequisite
-- [Python 2.x](https://www.python.org/downloads/)
+- [Python 2.7/3.4](https://www.python.org/downloads/)
 - [requests](https://pypi.python.org/pypi/requests)
+- [pyquery](https://pypi.python.org/pypi/pyquery)
 
-`requests` can be installed through [`pip`](https://pypi.python.org/pypi/pip).
-With `pip` installed, execute `pip install requests` in a shell.
+Note: Other versions of Python 2/3 may work but are untested.
 
 # Usage
-Pass your student ID as a command-line parameter.
+First, edit the configuration file `qiubo.json`.
+Fill in your studend id which is mandatory for obvious reasons.
 
-e.g. If your student ID is 1234567890, execute in a shell
-```
-user ~ $ /path/to/QiuBo/qiubo.py 1234567890
-```
+The `sign_in_log` item controls whether to produce a sign-in log on each sign-in attempt.
+The log will be named `qiubo.log`.
+
+More configurable items are coming.
 
 # Log
-The script generates log file in its directory if there is any sign-in attempt.
-It simply consists of the time it tries to sign in and the JSON returned by the server.
-If the JSON contains `code: 1`, it means that the attempt was successful.
+`qiubo.log` simply consists of the time it tried to sign in and the JSON returned by the server.
+`"code": 1` stands for success while `"code": -1` stands for failure.
