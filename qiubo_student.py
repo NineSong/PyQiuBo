@@ -1,14 +1,15 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import requests
 import pyquery
 import time
 import sys
+from qiubo_classair import QiuBoClassAir
 
 class QiuBoStudent(object):
     def __init__(self, student_id, fetch_schedule=True):
         self._id = student_id
+        self._name = QiuBoClassAir(self._id).name
         self._course = None
         self._schedule = None
         self._session = requests.Session()
@@ -19,12 +20,12 @@ class QiuBoStudent(object):
 
     def _login(self):
         self._session.post(
-            'http://218.193.151.102/index.php/Mhs/Dhu/dologin.php',
-            data = {'username': self._id, 'password': self._id[-4:]}
+            'http://classair.dhu.edu.cn/index.php/Mhs/Dhu/dologin.php',
+            data={'username': self._id, 'password': self._id[-4:]}
         )
 
     def _fetch_schedule(self):
-        response = self._session.get('http://218.193.151.102/index.php/Mhs/Dhu/mycourse.php')
+        response = self._session.get('http://classair.dhu.edu.cn/index.php/Mhs/Dhu/mycourse.php')
         pq = pyquery.PyQuery(response.text)
         course_list = enumerate(pq('#courselist')('.item'))
         course_info = pq('.listcontent')
@@ -37,9 +38,9 @@ class QiuBoStudent(object):
             9: '18:00',
             11: '19:50'
         }
-        self._schedule = [[], [], [], [], [], [], []]
+        self._schedule = [], [], [], [], [], [], []
 
-        for (i, div) in course_list:
+        for i, div in course_list:
             style = pq(div).attr('style').split(';')
             name = pq(div)('a').html()
             onclick = pq(course_info[i])('a').attr('onclick').split(',')
@@ -47,8 +48,7 @@ class QiuBoStudent(object):
                 'course_name': name[:name.index('@')],
                 'lesson_id': onclick[0][onclick[0].index('(') + 1:],
                 'course_id': onclick[1],
-                'begin_time': begin_time[int(style[1][5:-3]) // 5],
-                # 'span_time': int(style[2][8:-3]) // 5
+                'begin_time': begin_time[int(style[1][5:-3]) // 5]
             });
 
     def print_schedule(self):
@@ -57,7 +57,7 @@ class QiuBoStudent(object):
 
         day = u'星期一', u'星期二', u'星期三', u'星期四', u'星期五', u'星期六', u'星期日'
 
-        for (i, schedule) in enumerate(self._schedule):
+        for i, schedule in enumerate(self._schedule):
             if schedule:
                 print(day[i])
                 for course in schedule:
@@ -76,35 +76,42 @@ class QiuBoStudent(object):
 
         for i in range(attempts):
             response = self._session.get(
-                'http://218.193.151.102/index.php/Mhs/Keshang/signin/lesson_id/' +
+                'http://classair.dhu.edu.cn/index.php/Mhs/Keshang/signin/lesson_id/' +
                 course['lesson_id'] + '/course_id/' + course['course_id'] + '/stu_id/' + self._id
             )
 
             if response.json()['code'] == 1:
-                print(
-                    time.strftime('%Y/%m/%d %H:%M:%S', time.localtime()) + ' ' +
-                    course['course_name'] + u'签到成功'
+                items = (
+                    time.strftime('%Y/%m/%d %H:%M:%S', time.localtime()),
+                    self._id, self._name, course['course_name'] + u'签到成功'
                 )
                 succeed = True
             else:
-                print(
-                    time.strftime('%Y/%m/%d %H:%M:%S', time.localtime()) + ' ' +
-                    course['course_name'] + u'签到失败:' + response.json()['reasons']
+                items = (
+                    time.strftime('%Y/%m/%d %H:%M:%S', time.localtime()),
+                    self._id, self._name, course['course_name'] + u'签到失败',
+                    response.json()['reasons']
                 )
+
+            print(' '.join(items))
 
             if log:
                 if sys.version_info < (3, 0):
                     course_name = course['course_name'].encode('UTF-8')
+                    name = self._name.encode('UTF-8')
                     response_text = response.text.encode('UTF-8')
                 else:
                     course_name = course['course_name']
+                    name = self._name
                     response_text = response.text
 
+                items = (
+                    time.strftime('%Y/%m/%d %H:%M:%S', time.localtime()),
+                    self._id, name, course_name, response_text
+                )
+
                 with open('qiubo.log', 'a') as _log:
-                    _log.write(
-                        time.strftime('%Y/%m/%d %H:%M:%S', time.localtime()) +
-                        ' ' + course_name + ' ' + response_text + '\n'
-                    )
+                    _log.write(' '.join(items) + '\n')
 
             if succeed:
                 return
