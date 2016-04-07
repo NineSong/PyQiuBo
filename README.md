@@ -17,9 +17,11 @@ The log will be named `qiubo.log`.
 
 Then, run `qiubo.py`. Have fun!
 
-# Reminders
+# Tips
+- For sake of convenience, please do not change your password.
 - The script relies on the clock of your computer, so make sure that your clock is correct.
 - PE lessons do not appear in Yiban's schedule.
+- If two or more courses conflict, only one of them can be signed in.
 - Sometimes sign-in may fail. Don't worry, check out the course first.
   It doesn't matter if it is not a major course.
 
