@@ -4,17 +4,22 @@
 import requests
 import json
 import time
+import sys
 from qiubo_student import QiuBoStudent
 
 def main():
-    config = {}
-
-    try:
-        with open('qiubo.json', 'r') as config_file:
-            config = json.load(config_file)
-    except:
-        print('Failed to load configuration file qiubo.json!')
-        exit()
+    if len(sys.argv) == 1:
+        try:
+            with open('qiubo.json', 'r') as config_file:
+                config = json.load(config_file)
+        except:
+            print('Failed to load configuration file qiubo.json!')
+            exit()
+    else:
+        config = {
+            'id': sys.argv[1],
+            'sign_in_log': True
+        }
 
     while 1:
         try:
