@@ -77,7 +77,8 @@ class QiuBoStudent(object):
         for i in range(attempts):
             response = self._session.get(
                 'http://classair.dhu.edu.cn/index.php/Mhs/Keshang/signin/lesson_id/' +
-                course['lesson_id'] + '/course_id/' + course['course_id'] + '/stu_id/' + self._id
+                course['lesson_id'] + '/course_id/' + course['course_id'] + '/stu_id/' +
+                self._id + '/lat/31.0560/lon/121.2140'
             )
 
             if response.json()['code'] == 1:
