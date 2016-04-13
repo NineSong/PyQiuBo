@@ -128,9 +128,9 @@ class QiuBoStudent(object):
 
         for course in schedule_today:
             begin_time = course['begin_time'].split(':')
-            minutes = (int(begin_time[0]) - _hour)*60 + int(begin_time[1]) - _min
+            minutes = (int(begin_time[0]) - _hour)*60 + int(begin_time[1]) - _min - 20
 
-            if minutes > -45:
+            if minutes > -65:
                 self._course = course
                 if minutes > 0:
                     print(course['begin_time'] + ' ' + course['course_name'])

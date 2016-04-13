@@ -24,20 +24,19 @@ def main():
     while 1:
         try:
             student = QiuBoStudent(config['id'])
-            # student.print_schedule()
             break
         except requests.exceptions.RequestException:
             print(u'网络连接失败')
-            time.sleep(5)
+            time.sleep(3)
 
     while 1:
         try:
             student.wait_for_next_course()
             student.sign_in(log=config['sign_in_log'])
-            time.sleep(3600)
+            time.sleep(3900)
         except requests.exceptions.RequestException:
             print(u'网络连接失败！')
-            time.sleep(5)
+            time.sleep(3)
 
 if __name__ == '__main__':
     main()
