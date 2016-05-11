@@ -64,7 +64,7 @@ class QiuBoStudent(object):
                     j = (course[x] for x in ('begin_time', 'course_name', 'lesson_id', 'course_id'))
                     print(' '.join(j))
 
-    def sign_in(self, course=None, attempts=5, interval=30, log=True):
+    def sign_in(self, course=None, attempts=50, interval=30, log=True):
         if course is None:
             if self._course is None:
                 return
