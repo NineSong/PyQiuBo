@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import requests
 # import json
 
@@ -13,7 +15,6 @@ class QiuBoClassAir(object):
             self.name = response['results']['stu_name']
             self._access_token = response['results']['access_token']
         else:
-            print('Warning: failed to log in!')
             self.name = u'某某某'
 
         if fetch_teacher_id:
