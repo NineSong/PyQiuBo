@@ -2,28 +2,17 @@
 # -*- coding: utf-8 -*-
 
 import requests
-import json
 import time
 import sys
 from qiubo_student import QiuBoStudent
 
 def main():
-    if len(sys.argv) == 1:
-        try:
-            with open('qiubo.json', 'r') as config_file:
-                config = json.load(config_file)
-        except:
-            print('Failed to load configuration file qiubo.json!')
-            exit()
-    else:
-        config = {
-            'id': sys.argv[1],
-            'sign_in_log': True
-        }
+    if len(sys.argv) != 2:
+        exit()
 
     while 1:
         try:
-            student = QiuBoStudent(config['id'])
+            student = QiuBoStudent(sys.argv[1])
             break
         except requests.exceptions.RequestException:
             print(u'网络连接失败')
@@ -32,7 +21,7 @@ def main():
     while 1:
         try:
             student.wait_for_next_course()
-            student.sign_in(log=config['sign_in_log'])
+            student.sign_in()
             time.sleep(3900)
         except requests.exceptions.RequestException:
             print(u'网络连接失败！')
