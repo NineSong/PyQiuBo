@@ -10,6 +10,7 @@ class QiuBoStudent(object):
     def __init__(self, student_id, fetch_schedule=True):
         self._id = student_id
         self._name = QiuBoClassAir(self._id).name
+        print(self._name)
         self._course = None
         self._schedule = None
         self._session = requests.Session()
