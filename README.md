@@ -1,4 +1,4 @@
-# QiuBo
+# PyQiuBo
 A Python script that helps students sign in DHU QiuBo app.
 
 # Prerequisite
@@ -9,22 +9,14 @@ A Python script that helps students sign in DHU QiuBo app.
 Note: Other versions of Python 2/3 may work but are untested.
 
 # Usage
-First, edit the configuration file `qiubo.json`.
-Fill in your student id which is mandatory for obvious reasons.
-
-`sign_in_log` controls whether to produce a sign-in log on each sign-in attempt.
-The log will be named `qiubo.log`.
-
-Then, run `qiubo.py`. Have fun!
+Run `qiubo.py your_student_id`. Have fun!
 
 # Tips
-- For sake of convenience, please do not change your password.
 - The script relies on the clock of your computer, so make sure that your clock is correct.
 - PE lessons do not appear in Yiban's schedule.
 - If two or more courses conflict, only one of them can be signed in.
-- Sometimes sign-in may fail. Don't worry, check out the course first.
-  It doesn't matter if it is not a major course.
+- Sometimes sign-in may fail. Don't worry, this may be because their database is corrupted.
 
 # Log
-`qiubo.log` simply consists of the time it tried to sign in and the JSON returned by the server.
+`qiubo.log` consists of the time it tried to sign in, student id, student name, course name and the JSON returned by the server.
 `"code": 1` stands for success while `"code": -1` stands for failure.
