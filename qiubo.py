@@ -24,7 +24,7 @@ def main():
             student.sign_in()
             time.sleep(3900)
         except requests.exceptions.RequestException:
-            print(u'网络连接失败！')
+            print(u'网络连接失败')
             time.sleep(3)
 
 if __name__ == '__main__':
