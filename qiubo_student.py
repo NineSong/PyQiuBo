@@ -10,7 +10,7 @@ class QiuBoStudent(object):
     def __init__(self, student_id, fetch_schedule=True):
         self._id = student_id
         self._name = QiuBoClassAir(self._id).name
-        print(self._name)
+        print(u'学生姓名：' + self._name)
         self._course = None
         self._schedule = None
         self._session = requests.Session()
@@ -125,6 +125,11 @@ class QiuBoStudent(object):
         _day = _time.tm_wday
         _hour = _time.tm_hour
         _min = _time.tm_min
+
+        if _day == 0:
+            self._login()
+            self._fetch_schedule()
+
         schedule_today = self._schedule[_day]
 
         for course in schedule_today:
