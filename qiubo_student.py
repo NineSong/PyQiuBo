@@ -65,7 +65,7 @@ class QiuBoStudent(object):
                     j = (course[x] for x in ('begin_time', 'course_name', 'lesson_id', 'course_id'))
                     print(' '.join(j))
 
-    def sign_in(self, course=None, attempts=50, interval=30, log=True):
+    def sign_in(self, course=None, attempts=3, interval=3600):
         if course is None:
             if self._course is None:
                 return
@@ -97,23 +97,22 @@ class QiuBoStudent(object):
 
             print(' '.join(items))
 
-            if log:
-                if sys.version_info < (3, 0):
-                    course_name = course['course_name'].encode('UTF-8')
-                    name = self._name.encode('UTF-8')
-                    response_text = response.text.encode('UTF-8')
-                else:
-                    course_name = course['course_name']
-                    name = self._name
-                    response_text = response.text
+            if sys.version_info < (3, 0):
+                course_name = course['course_name'].encode('UTF-8')
+                name = self._name.encode('UTF-8')
+                response_text = response.text.encode('UTF-8')
+            else:
+                course_name = course['course_name']
+                name = self._name
+                response_text = response.text
 
-                items = (
-                    time.strftime('%Y/%m/%d %H:%M:%S', time.localtime()),
-                    self._id, name, course_name, response_text
-                )
+            items = (
+                time.strftime('%Y/%m/%d %H:%M:%S', time.localtime()),
+                self._id, name, course_name, response_text
+            )
 
-                with open('qiubo.log', 'a') as _log:
-                    _log.write(' '.join(items) + '\n')
+            with open('qiubo.log', 'a') as log:
+                log.write(' '.join(items) + '\n')
 
             if succeed:
                 return
